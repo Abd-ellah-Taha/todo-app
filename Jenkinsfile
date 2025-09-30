@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'   // لازم تكون ضايف Maven tool في Jenkins باسم Maven3
-        jdk 'JDK17'      // لازم تكون ضايف JDK باسم JDK17
+        maven 'maven3'   // لازم الاسم يبقى مطابق للي مسجله في Global Tool Configuration
+        jdk 'jdk17'      // برضه نفس الكلام
     }
 
     environment {
@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'master', url: 'https://github.com/Abd-ellah-Taha/todo-app.git'
             }
         }
 
@@ -23,7 +23,7 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Docker Image') {
             steps {
                 sh "${DOCKER_COMPOSE} build"
             }
@@ -38,9 +38,9 @@ pipeline {
         stage('Test API') {
             steps {
                 script {
-                    // اختبار بسيط: نعمل curl للـ endpoint
-                    sh 'sleep 20' // نستنى السيرفر يشتغل
-                    sh 'curl -f http://localhost:8080/api/todos || true'
+                    echo "Waiting for app to start..."
+                    sh 'sleep 20'
+                    sh 'curl -f http://localhost:8080/api/todos || exit 1'
                 }
             }
         }
@@ -52,10 +52,11 @@ pipeline {
             sh "${DOCKER_COMPOSE} down || true"
         }
         success {
-            echo "Pipeline finished successfully."
+            echo "✅ Pipeline finished successfully."
         }
         failure {
-            echo "Pipeline failed."
+            echo "❌ Pipeline failed."
         }
     }
 }
+
