@@ -2,12 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'   // الاسم زي ما متسجل في Jenkins
-        jdk 'JDK17'
-    }
-
-    environment {
-        DOCKER_COMPOSE = 'docker-compose -f docker-compose.yml'
+        maven 'maven3'   // الاسم زي ما سجلته في Jenkins -> Global Tool Configuration
+        jdk 'jdk17'      // برضه الاسم زي اللي مسجله في Jenkins
     }
 
     stages {
@@ -23,24 +19,30 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Images') {
             steps {
-                sh "${DOCKER_COMPOSE} build"
+                sh 'docker build -t todo-app .'
             }
         }
 
         stage('Run Containers') {
             steps {
-                sh "${DOCKER_COMPOSE} up -d"
+                sh 'docker-compose -f docker-compose.yml up -d'
             }
         }
 
         stage('Test API') {
             steps {
                 script {
-                    echo "Waiting for app to start..."
-                    sh 'sleep 20'
-                    sh 'curl -f http://localhost:8080/api/todos || exit 1'
+                    def response = sh(
+                        script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/todos",
+                        returnStdout: true
+                    ).trim()
+                    echo "API response code: ${response}"
+
+                    if (response != '200') {
+                        error("API test failed! Expected 200, got ${response}")
+                    }
                 }
             }
         }
@@ -48,14 +50,14 @@ pipeline {
 
     post {
         always {
-            echo "Cleaning up containers..."
-            sh "${DOCKER_COMPOSE} down || true"
+            echo 'Cleaning up containers...'
+            sh 'docker-compose -f docker-compose.yml down || true'
         }
         success {
-            echo "✅ Pipeline finished successfully."
+            echo 'Pipeline succeeded 🎉'
         }
         failure {
-            echo "❌ Pipeline failed."
+            echo 'Pipeline failed ❌'
         }
     }
 }
