@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'   // الاسم زي ما سجلته في Jenkins -> Global Tool Configuration
-        jdk 'JDK17'      // برضه الاسم زي اللي مسجله في Jenkins
+        maven 'Maven3'      // الاسم زي ما سجلته في Jenkins -> Global Tool Configuration
+        jdk 'JDK17'         // برضه الاسم زي اللي مسجله في Jenkins
     }
 
     stages {
@@ -34,6 +34,7 @@ pipeline {
         stage('Test API') {
             steps {
                 script {
+                    // أمر curl للتحقق من أن التطبيق يعمل
                     def response = sh(
                         script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/todos",
                         returnStdout: true
@@ -50,8 +51,9 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up containers...'
-            sh 'docker-compose -f docker-compose.yml down || true'
+            // ملاحظة هامة: تم حذف خطوة 'docker-compose down' من هنا
+            // للحفاظ على الحاويات تعمل بعد نجاح المسار لغرض الاختبار اليدوي.
+            echo 'Cleanup finished. Containers are still running for manual testing.'
         }
         success {
             echo 'Pipeline succeeded 🎉'
@@ -61,4 +63,3 @@ pipeline {
         }
     }
 }
-
